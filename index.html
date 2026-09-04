@@ -467,10 +467,12 @@
 
     // ─── AUTH ───
     function showLogin() {
-        loginScreen.style.display = 'flex';
-        appContent.style.display = 'none';
-        loginError.textContent = '';
-    }
+    loginScreen.style.display = 'flex';
+    appContent.style.display = 'none';
+    loginError.textContent = '';
+    loginEmail.value = '';      // Clear email field
+    loginPassword.value = '';   // Clear password field
+}
 
     function showApp(user) {
         loginScreen.style.display = 'none';
