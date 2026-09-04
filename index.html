@@ -6,7 +6,6 @@
     <title>Business P&L Ledger</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ─── same as before – keep your existing CSS ─── */
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
@@ -376,7 +375,7 @@
             </div>
         </div>
 
-        <!-- FILTER BAR (now with date range) -->
+        <!-- FILTER BAR – date inputs are definitely here -->
         <div class="filter-bar">
             <label>🔎 Filter:</label>
             <input type="text" id="filterText" placeholder="Search..." style="flex:1;min-width:120px;" />
@@ -400,14 +399,14 @@
             </table>
         </div>
 
-        <!-- SUMMARY (will update based on filtered data) -->
+        <!-- SUMMARY (updates with filters) -->
         <div class="summary-grid">
             <div class="summary-card"><div class="label">Total Income</div><div class="value" id="totalIncome">0</div></div>
             <div class="summary-card"><div class="label">Total Expenses</div><div class="value" id="totalExpenses">0</div></div>
             <div class="summary-card"><div class="label">Net Profit</div><div class="value" id="netBalance">0</div></div>
         </div>
 
-        <!-- CATEGORY BREAKDOWN (will update based on filtered data) -->
+        <!-- CATEGORY BREAKDOWN (updates with filters) -->
         <div style="margin-top:16px;">
             <div class="section-title">📊 Category Breakdown</div>
             <div class="table-wrap">
@@ -507,7 +506,7 @@
         }
     }
 
-    // ─── RENDER (with date range filter) ───
+    // ─── RENDER (with date filters) ───
     function render() {
         // 1. Start with all transactions
         let filtered = transactions;
@@ -540,7 +539,7 @@
             filtered = filtered.filter(t => t.date <= toDate);
         }
 
-        // ─── Render Table (using filtered data) ───
+        // ─── Render Table ───
         if (filtered.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#6b7b95;">No transactions</td></tr>';
         } else {
@@ -592,7 +591,7 @@
             });
         }
 
-        // ─── Summary (based on filtered data) ───
+        // ─── Summary ───
         let totalIncome = 0, totalExpenses = 0;
         filtered.forEach(t => {
             const amt = t.amount || 0;
@@ -605,7 +604,7 @@
         netBalanceEl.textContent = formatCurrency(netProfit);
         netBalanceEl.className = 'value' + (netProfit >= 0 ? ' green' : ' red');
 
-        // ─── Category Breakdown (based on filtered data) ───
+        // ─── Category Breakdown ───
         const catMap = {};
         filtered.forEach(t => {
             const key = t.category || 'Uncategorized';
@@ -753,7 +752,7 @@
         });
     });
 
-    // Filter events
+    // Filter events – each triggers re‑render
     filterText.addEventListener('input', render);
     filterType.addEventListener('change', render);
     filterDateFrom.addEventListener('change', render);
