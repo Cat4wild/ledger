@@ -6,6 +6,7 @@
     <title>Business P&L Ledger</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        /* (same CSS as before – keep your existing styles) */
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
@@ -318,11 +319,11 @@
 </head>
 <body>
 <div class="app">
-    <!-- ─── LOGIN ─── -->
+    <!-- LOGIN -->
     <div id="loginScreen" style="display:flex;">
         <div class="login-box">
             <h2>🔐 Sign In</h2>
-            <p>Access your Business P&L Ledger</p>
+            <p>Access Business P&L Ledger</p>
             <input type="email" id="loginEmail" placeholder="Email" />
             <input type="password" id="loginPassword" placeholder="Password" />
             <div class="btn-row">
@@ -333,7 +334,7 @@
         </div>
     </div>
 
-    <!-- ─── APP ─── -->
+    <!-- APP -->
     <div id="appContent" class="app-content">
         <div class="header">
             <span class="header-icon">📊</span>
@@ -349,7 +350,7 @@
         </div>
         <div id="statusMsg" class="status">⏳ Loading…</div>
 
-        <!-- ─── ADD TRANSACTION ─── -->
+        <!-- ADD TRANSACTION -->
         <div id="adminControls" style="display:block;">
             <div class="form-grid">
                 <select id="txTypeSelect">
@@ -375,7 +376,7 @@
             </div>
         </div>
 
-        <!-- ─── FILTER ─── -->
+        <!-- FILTER -->
         <div class="filter-bar">
             <label>🔎 Filter:</label>
             <input type="text" id="filterText" placeholder="Search..." style="flex:1;min-width:150px;" />
@@ -387,7 +388,7 @@
             <button id="clearFilterBtn" class="btn btn-outline btn-sm">Clear</button>
         </div>
 
-        <!-- ─── TRANSACTIONS TABLE ─── -->
+        <!-- TRANSACTIONS TABLE -->
         <div class="table-wrap">
             <table>
                 <thead><tr>
@@ -397,14 +398,14 @@
             </table>
         </div>
 
-        <!-- ─── SUMMARY ─── -->
+        <!-- SUMMARY -->
         <div class="summary-grid">
             <div class="summary-card"><div class="label">Total Income</div><div class="value" id="totalIncome">0</div></div>
             <div class="summary-card"><div class="label">Total Expenses</div><div class="value" id="totalExpenses">0</div></div>
             <div class="summary-card"><div class="label">Net Profit</div><div class="value" id="netBalance">0</div></div>
         </div>
 
-        <!-- ─── CATEGORY BREAKDOWN ─── -->
+        <!-- CATEGORY BREAKDOWN -->
         <div style="margin-top:16px;">
             <div class="section-title">📊 Category Breakdown</div>
             <div class="table-wrap">
@@ -418,11 +419,11 @@
 </div>
 
 <script>
-    // ─── REPLACE WITH YOUR SUPABASE CREDENTIALS ─── 
+    // ─── REPLACE WITH YOUR SUPABASE CREDENTIALS ───
     const SUPABASE_URL = 'https://oddemhgvcbzjxkppgrxt.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kZGVtaGd2Y2J6anhrcHBncnh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MjU0NDAsImV4cCI6MjEwNDEwMTQ0MH0.TRU3Rjjggtl8-xlZshfLRx8tScFnKyldpI9Ixl1c5ms';
 
-    const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const sb = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // ─── DOM REFS ───
     const loginScreen = document.getElementById('loginScreen');
@@ -485,7 +486,7 @@
     async function loadTransactions() {
         setStatus('⏳ Loading…');
         try {
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('transactions')
                 .select('*')
                 .order('date', { ascending: false });
@@ -501,7 +502,6 @@
 
     // ─── RENDER ───
     function render() {
-        // Filter
         let filtered = transactions;
         const search = filterText.value.toLowerCase().trim();
         const typeFilter = filterType.value;
@@ -517,7 +517,6 @@
             filtered = filtered.filter(t => t.type === typeFilter);
         }
 
-        // Table
         if (filtered.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#6b7b95;">No transactions</td></tr>';
         } else {
@@ -551,13 +550,12 @@
                     const id = this.dataset.id;
                     if (!confirm('Delete this transaction?')) return;
                     try {
-                        // If there's an attachment, delete it from storage
                         const tx = transactions.find(t => t.id == id);
                         if (tx && tx.attachment_url) {
                             const filePath = tx.attachment_url.split('/').pop();
-                            await supabase.storage.from('attachments').remove([filePath]);
+                            await sb.storage.from('attachments').remove([filePath]);
                         }
-                        const { error } = await supabase
+                        const { error } = await sb
                             .from('transactions')
                             .delete()
                             .eq('id', id);
@@ -570,7 +568,6 @@
             });
         }
 
-        // Summary
         let totalIncome = 0, totalExpenses = 0;
         transactions.forEach(t => {
             const amt = t.amount || 0;
@@ -583,7 +580,6 @@
         netBalanceEl.textContent = formatCurrency(netProfit);
         netBalanceEl.className = 'value' + (netProfit >= 0 ? ' green' : ' red');
 
-        // Category breakdown
         const catMap = {};
         transactions.forEach(t => {
             const key = t.category || 'Uncategorized';
@@ -618,17 +614,17 @@
             if (file) {
                 const fileExt = file.name.split('.').pop();
                 const fileName = `${Date.now()}.${fileExt}`;
-                const { data, error } = await supabase.storage
+                const { data, error } = await sb.storage
                     .from('attachments')
                     .upload(fileName, file);
                 if (error) throw error;
-                const { data: urlData } = supabase.storage
+                const { data: urlData } = sb.storage
                     .from('attachments')
                     .getPublicUrl(fileName);
                 attachment_url = urlData.publicUrl;
             }
 
-            const { error } = await supabase.from('transactions').insert([{
+            const { error } = await sb.from('transactions').insert([{
                 type,
                 category,
                 amount,
@@ -678,13 +674,12 @@
     async function handleClearAll() {
         if (!confirm('Delete ALL transactions? This cannot be undone.')) return;
         try {
-            // Delete all attachments from storage
-            const { data: files } = await supabase.storage.from('attachments').list();
+            const { data: files } = await sb.storage.from('attachments').list();
             if (files && files.length > 0) {
                 const filePaths = files.map(f => f.name);
-                await supabase.storage.from('attachments').remove(filePaths);
+                await sb.storage.from('attachments').remove(filePaths);
             }
-            const { error } = await supabase
+            const { error } = await sb
                 .from('transactions')
                 .delete()
                 .neq('id', 0);
@@ -702,7 +697,7 @@
         const password = loginPassword.value.trim();
         if (!email || !password) { loginError.textContent = 'Please enter email and password.'; return; }
         try {
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            const { data, error } = await sb.auth.signInWithPassword({ email, password });
             if (error) throw error;
             showApp(data.user);
         } catch (err) { loginError.textContent = err.message; }
@@ -714,7 +709,7 @@
         if (!email || !password) { loginError.textContent = 'Please enter email and password.'; return; }
         if (password.length < 6) { loginError.textContent = 'Password must be at least 6 characters.'; return; }
         try {
-            const { data, error } = await supabase.auth.signUp({ email, password });
+            const { data, error } = await sb.auth.signUp({ email, password });
             if (error) throw error;
             alert('Account created! Please check your email to confirm.');
             loginError.textContent = '';
@@ -722,7 +717,7 @@
     });
 
     logoutBtn.addEventListener('click', async function() {
-        await supabase.auth.signOut();
+        await sb.auth.signOut();
         showLogin();
     });
 
@@ -752,7 +747,7 @@
     if (dateInput) dateInput.value = today;
 
     // ─── AUTH STATE LISTENER ───
-    supabase.auth.onAuthStateChange((event, session) => {
+    sb.auth.onAuthStateChange((event, session) => {
         if (session) {
             showApp(session.user);
         } else {
