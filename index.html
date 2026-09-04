@@ -6,6 +6,7 @@
     <title>Business P&L Ledger</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        /* ─── same as before – keep your existing CSS ─── */
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
@@ -306,6 +307,7 @@
             .summary-grid { grid-template-columns: 1fr 1fr; }
             #loginScreen .login-box { padding: 24px 18px; }
             .form-grid textarea { min-width: auto; }
+            .filter-bar input[type="date"] { min-width: 120px; }
         }
         @media (max-width:400px) {
             .summary-grid { grid-template-columns: 1fr; }
@@ -318,15 +320,15 @@
 </head>
 <body>
 <div class="app">
-    <!-- LOGIN SCREEN (No Sign Up) -->
+    <!-- LOGIN SCREEN -->
     <div id="loginScreen" style="display:flex;">
         <div class="login-box">
-            <h2>🔐 Admin Get In</h2>
-            <p>Enter email & pwd to access the Ledger</p>
+            <h2>🔐 Admin Sign In</h2>
+            <p>Enter your credentials to access the Business P&L Ledger</p>
             <input type="email" id="loginEmail" placeholder="Email" />
             <input type="password" id="loginPassword" placeholder="Password" />
             <div class="btn-row">
-                <button id="loginBtn" class="btn btn-login">Get In</button>
+                <button id="loginBtn" class="btn btn-login">Sign In</button>
             </div>
             <div id="loginError" class="error-msg"></div>
         </div>
@@ -374,10 +376,12 @@
             </div>
         </div>
 
-        <!-- FILTER -->
+        <!-- FILTER BAR (now with date range) -->
         <div class="filter-bar">
             <label>🔎 Filter:</label>
-            <input type="text" id="filterText" placeholder="Search..." style="flex:1;min-width:150px;" />
+            <input type="text" id="filterText" placeholder="Search..." style="flex:1;min-width:120px;" />
+            <input type="date" id="filterDateFrom" placeholder="From" />
+            <input type="date" id="filterDateTo" placeholder="To" />
             <select id="filterType">
                 <option value="all">All Types</option>
                 <option value="Income">Income</option>
@@ -396,14 +400,14 @@
             </table>
         </div>
 
-        <!-- SUMMARY -->
+        <!-- SUMMARY (will update based on filtered data) -->
         <div class="summary-grid">
             <div class="summary-card"><div class="label">Total Income</div><div class="value" id="totalIncome">0</div></div>
             <div class="summary-card"><div class="label">Total Expenses</div><div class="value" id="totalExpenses">0</div></div>
             <div class="summary-card"><div class="label">Net Profit</div><div class="value" id="netBalance">0</div></div>
         </div>
 
-        <!-- CATEGORY BREAKDOWN -->
+        <!-- CATEGORY BREAKDOWN (will update based on filtered data) -->
         <div style="margin-top:16px;">
             <div class="section-title">📊 Category Breakdown</div>
             <div class="table-wrap">
@@ -442,12 +446,16 @@
     const descriptionInput = document.getElementById('descriptionInput');
     const fileInput = document.getElementById('fileInput');
     const addBtn = document.getElementById('addBtn');
+
     const filterText = document.getElementById('filterText');
     const filterType = document.getElementById('filterType');
+    const filterDateFrom = document.getElementById('filterDateFrom');
+    const filterDateTo = document.getElementById('filterDateTo');
     const clearFilterBtn = document.getElementById('clearFilterBtn');
     const clearAllBtn = document.getElementById('clearAllBtn');
     const refreshBtn = document.getElementById('refreshBtn');
     const exportCsvBtn = document.getElementById('exportCsvBtn');
+
     const tbody = document.getElementById('transTableBody');
     const totalIncomeEl = document.getElementById('totalIncome');
     const totalExpensesEl = document.getElementById('totalExpenses');
@@ -467,12 +475,12 @@
 
     // ─── AUTH ───
     function showLogin() {
-    loginScreen.style.display = 'flex';
-    appContent.style.display = 'none';
-    loginError.textContent = '';
-    loginEmail.value = '';      // Clear email field
-    loginPassword.value = '';   // Clear password field
-}
+        loginScreen.style.display = 'flex';
+        appContent.style.display = 'none';
+        loginError.textContent = '';
+        loginEmail.value = '';
+        loginPassword.value = '';
+    }
 
     function showApp(user) {
         loginScreen.style.display = 'none';
@@ -499,12 +507,13 @@
         }
     }
 
-    // ─── RENDER (same as before) ───
+    // ─── RENDER (with date range filter) ───
     function render() {
-        // (full render function from previous version – kept for brevity)
+        // 1. Start with all transactions
         let filtered = transactions;
+
+        // 2. Apply search filter
         const search = filterText.value.toLowerCase().trim();
-        const typeFilter = filterType.value;
         if (search) {
             filtered = filtered.filter(t =>
                 (t.category || '').toLowerCase().includes(search) ||
@@ -513,10 +522,25 @@
                 (t.type || '').toLowerCase().includes(search)
             );
         }
+
+        // 3. Apply type filter
+        const typeFilter = filterType.value;
         if (typeFilter !== 'all') {
             filtered = filtered.filter(t => t.type === typeFilter);
         }
 
+        // 4. Apply date range filter (if both dates are set)
+        const fromDate = filterDateFrom.value;
+        const toDate = filterDateTo.value;
+        if (fromDate && toDate) {
+            filtered = filtered.filter(t => t.date >= fromDate && t.date <= toDate);
+        } else if (fromDate) {
+            filtered = filtered.filter(t => t.date >= fromDate);
+        } else if (toDate) {
+            filtered = filtered.filter(t => t.date <= toDate);
+        }
+
+        // ─── Render Table (using filtered data) ───
         if (filtered.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#6b7b95;">No transactions</td></tr>';
         } else {
@@ -568,8 +592,9 @@
             });
         }
 
+        // ─── Summary (based on filtered data) ───
         let totalIncome = 0, totalExpenses = 0;
-        transactions.forEach(t => {
+        filtered.forEach(t => {
             const amt = t.amount || 0;
             if (t.type === 'Income') totalIncome += amt;
             else if (t.type === 'Expense') totalExpenses += amt;
@@ -580,8 +605,9 @@
         netBalanceEl.textContent = formatCurrency(netProfit);
         netBalanceEl.className = 'value' + (netProfit >= 0 ? ' green' : ' red');
 
+        // ─── Category Breakdown (based on filtered data) ───
         const catMap = {};
-        transactions.forEach(t => {
+        filtered.forEach(t => {
             const key = t.category || 'Uncategorized';
             if (!catMap[key]) catMap[key] = { amount: 0, type: t.type || 'Other' };
             catMap[key].amount += t.amount || 0;
@@ -691,7 +717,7 @@
         }
     }
 
-    // ─── AUTH EVENT ───
+    // ─── AUTH EVENTS ───
     loginBtn.addEventListener('click', async function() {
         const email = loginEmail.value.trim();
         const password = loginPassword.value.trim();
@@ -727,14 +753,25 @@
         });
     });
 
+    // Filter events
     filterText.addEventListener('input', render);
     filterType.addEventListener('change', render);
-    clearFilterBtn.addEventListener('click', function() { filterText.value = ''; filterType.value = 'all'; render(); });
+    filterDateFrom.addEventListener('change', render);
+    filterDateTo.addEventListener('change', render);
+
+    clearFilterBtn.addEventListener('click', function() {
+        filterText.value = '';
+        filterType.value = 'all';
+        filterDateFrom.value = '';
+        filterDateTo.value = '';
+        render();
+    });
+
     clearAllBtn.addEventListener('click', handleClearAll);
     refreshBtn.addEventListener('click', loadTransactions);
     exportCsvBtn.addEventListener('click', handleExportCSV);
 
-    // Set default date
+    // Set default date for new transaction
     const today = new Date().toISOString().slice(0,10);
     if (dateInput) dateInput.value = today;
 
