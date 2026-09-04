@@ -4,10 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Business P&L Ledger</title>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
@@ -348,7 +345,7 @@
         </div>
         <div class="subtitle">
             <span><span style="color:#f59e0b;">⚡</span> Income & Expense tracking with proof attachments</span>
-            <span class="badge" id="roleBadge">👑 Admin</span>
+            <span class="badge">🔒 Private</span>
         </div>
         <div id="statusMsg" class="status">⏳ Loading…</div>
 
@@ -359,11 +356,11 @@
                     <option value="Income">💰 Income</option>
                     <option value="Expense">💳 Expense</option>
                 </select>
-                <input type="text" id="categoryInput" placeholder="Category (e.g., Rent, Sales)" />
+                <input type="text" id="categoryInput" placeholder="Category" />
                 <input type="number" id="amountInput" step="0.01" placeholder="Amount" />
                 <input type="date" id="dateInput" />
-                <input type="text" id="partyInput" placeholder="Party (Supplier/Customer)" />
-                <textarea id="descriptionInput" placeholder="Description / Notes" rows="1"></textarea>
+                <input type="text" id="partyInput" placeholder="Party" />
+                <textarea id="descriptionInput" placeholder="Description" rows="1"></textarea>
                 <div class="file-input-wrapper">
                     <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" />
                     <span style="color:#6b7b95;font-size:11px;">📎 Proof</span>
@@ -381,7 +378,7 @@
         <!-- ─── FILTER ─── -->
         <div class="filter-bar">
             <label>🔎 Filter:</label>
-            <input type="text" id="filterText" placeholder="Search any field..." style="flex:1;min-width:150px;" />
+            <input type="text" id="filterText" placeholder="Search..." style="flex:1;min-width:150px;" />
             <select id="filterType">
                 <option value="all">All Types</option>
                 <option value="Income">Income</option>
@@ -421,20 +418,11 @@
 </div>
 
 <script>
-    // ─── REPLACE WITH YOUR FIREBASE CONFIG ───
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_PROJECT.firebaseapp.com",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_PROJECT.appspot.com",
-        messagingSenderId: "YOUR_SENDER_ID",
-        appId: "YOUR_APP_ID"
-    };
+    // ─── REPLACE WITH YOUR SUPABASE CREDENTIALS ─── 
+    const SUPABASE_URL = 'https://oddemhgvcbzjxkppgrxt.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kZGVtaGd2Y2J6anhrcHBncnh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MjU0NDAsImV4cCI6MjEwNDEwMTQ0MH0.TRU3Rjjggtl8-xlZshfLRx8tScFnKyldpI9Ixl1c5ms';
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-    const storage = firebase.storage();
+    const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // ─── DOM REFS ───
     const loginScreen = document.getElementById('loginScreen');
@@ -446,7 +434,6 @@
     const loginError = document.getElementById('loginError');
     const logoutBtn = document.getElementById('logoutBtn');
     const userEmailDisplay = document.getElementById('userEmailDisplay');
-    const roleBadge = document.getElementById('roleBadge');
     const statusEl = document.getElementById('statusMsg');
 
     const txTypeSelect = document.getElementById('txTypeSelect');
@@ -469,9 +456,7 @@
     const netBalanceEl = document.getElementById('netBalance');
     const categoryBreakdownBody = document.getElementById('categoryBreakdownBody');
 
-    // ─── STATE ───
     let transactions = [];
-    let currentUserRole = 'admin';
 
     function setStatus(msg, type = '') {
         statusEl.innerHTML = msg;
@@ -493,39 +478,24 @@
         loginScreen.style.display = 'none';
         appContent.style.display = 'block';
         userEmailDisplay.textContent = user.email || 'User';
-        loadUserRole(user.uid);
-    }
-
-    async function loadUserRole(uid) {
-        try {
-            const doc = await db.collection('users').doc(uid).get();
-            if (doc.exists) {
-                currentUserRole = doc.data().role || 'admin';
-            } else {
-                await db.collection('users').doc(uid).set({ role: 'admin' });
-                currentUserRole = 'admin';
-            }
-            roleBadge.textContent = currentUserRole === 'admin' ? '👑 Admin' : '👁️ Read-Only';
-            await loadTransactions();
-        } catch (err) {
-            setStatus('❌ Role error: ' + err.message, 'error');
-        }
+        loadTransactions();
     }
 
     // ─── LOAD ───
     async function loadTransactions() {
         setStatus('⏳ Loading…');
         try {
-            const snapshot = await db.collection('transactions').orderBy('date', 'desc').get();
-            transactions = [];
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                transactions.push({ id: doc.id, ...data });
-            });
+            const { data, error } = await supabase
+                .from('transactions')
+                .select('*')
+                .order('date', { ascending: false });
+            if (error) throw error;
+            transactions = data || [];
             render();
             setStatus(`✅ ${transactions.length} records loaded`, 'success');
         } catch (err) {
             setStatus('❌ Error: ' + err.message, 'error');
+            alert('Error loading data: ' + err.message);
         }
     }
 
@@ -571,30 +541,33 @@
                         <td>${t.party || '-'}</td>
                         <td>${t.description || '-'}</td>
                         <td>${attachHtml}</td>
-                        <td>${currentUserRole === 'admin' ? `<button class="remove-btn" data-id="${t.id}">✕</button>` : ''}</td>
+                        <td><button class="remove-btn" data-id="${t.id}">✕</button></td>
                     </tr>
                 `;
             });
             tbody.innerHTML = html;
-            if (currentUserRole === 'admin') {
-                document.querySelectorAll('.remove-btn').forEach(btn => {
-                    btn.addEventListener('click', async function() {
-                        const id = this.dataset.id;
-                        if (!confirm('Delete this transaction?')) return;
-                        try {
-                            const tx = transactions.find(t => t.id === id);
-                            if (tx && tx.attachment_url) {
-                                const ref = storage.refFromURL(tx.attachment_url);
-                                await ref.delete().catch(() => {});
-                            }
-                            await db.collection('transactions').doc(id).delete();
-                            await loadTransactions();
-                        } catch (err) {
-                            alert('Delete error: ' + err.message);
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const id = this.dataset.id;
+                    if (!confirm('Delete this transaction?')) return;
+                    try {
+                        // If there's an attachment, delete it from storage
+                        const tx = transactions.find(t => t.id == id);
+                        if (tx && tx.attachment_url) {
+                            const filePath = tx.attachment_url.split('/').pop();
+                            await supabase.storage.from('attachments').remove([filePath]);
                         }
-                    });
+                        const { error } = await supabase
+                            .from('transactions')
+                            .delete()
+                            .eq('id', id);
+                        if (error) throw error;
+                        await loadTransactions();
+                    } catch (err) {
+                        alert('Delete error: ' + err.message);
+                    }
                 });
-            }
+            });
         }
 
         // Summary
@@ -629,8 +602,6 @@
 
     // ─── ADD TRANSACTION ───
     async function addTransaction() {
-        if (currentUserRole !== 'admin') { alert('Only admins can add.'); return; }
-
         const type = txTypeSelect.value;
         const category = categoryInput.value.trim();
         const amount = parseFloat(amountInput.value);
@@ -645,23 +616,29 @@
         try {
             let attachment_url = null;
             if (file) {
-                const fileRef = storage.ref(`attachments/${Date.now()}_${file.name}`);
-                const snapshot = await fileRef.put(file);
-                attachment_url = await snapshot.ref.getDownloadURL();
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Date.now()}.${fileExt}`;
+                const { data, error } = await supabase.storage
+                    .from('attachments')
+                    .upload(fileName, file);
+                if (error) throw error;
+                const { data: urlData } = supabase.storage
+                    .from('attachments')
+                    .getPublicUrl(fileName);
+                attachment_url = urlData.publicUrl;
             }
 
-            const newRecord = {
+            const { error } = await supabase.from('transactions').insert([{
                 type,
                 category,
                 amount,
                 date: date || new Date().toISOString().slice(0,10),
                 party: party || '',
                 description: description || '',
-                attachment_url,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
+                attachment_url
+            }]);
 
-            await db.collection('transactions').add(newRecord);
+            if (error) throw error;
             categoryInput.value = ''; amountInput.value = ''; dateInput.value = ''; partyInput.value = ''; descriptionInput.value = ''; fileInput.value = '';
             await loadTransactions();
             setStatus(`✅ ${type} added for ${category}`, 'success');
@@ -699,19 +676,19 @@
 
     // ─── CLEAR ALL ───
     async function handleClearAll() {
-        if (currentUserRole !== 'admin') { alert('Only admins can clear.'); return; }
         if (!confirm('Delete ALL transactions? This cannot be undone.')) return;
         try {
-            const snapshot = await db.collection('transactions').get();
-            const batch = db.batch();
-            snapshot.docs.forEach(doc => {
-                const data = doc.data();
-                if (data.attachment_url) {
-                    storage.refFromURL(data.attachment_url).delete().catch(() => {});
-                }
-                batch.delete(doc.ref);
-            });
-            await batch.commit();
+            // Delete all attachments from storage
+            const { data: files } = await supabase.storage.from('attachments').list();
+            if (files && files.length > 0) {
+                const filePaths = files.map(f => f.name);
+                await supabase.storage.from('attachments').remove(filePaths);
+            }
+            const { error } = await supabase
+                .from('transactions')
+                .delete()
+                .neq('id', 0);
+            if (error) throw error;
             await loadTransactions();
             setStatus('🗑 All cleared', '');
         } catch (err) {
@@ -725,8 +702,9 @@
         const password = loginPassword.value.trim();
         if (!email || !password) { loginError.textContent = 'Please enter email and password.'; return; }
         try {
-            const cred = await auth.signInWithEmailAndPassword(email, password);
-            showApp(cred.user);
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+            showApp(data.user);
         } catch (err) { loginError.textContent = err.message; }
     });
 
@@ -736,13 +714,18 @@
         if (!email || !password) { loginError.textContent = 'Please enter email and password.'; return; }
         if (password.length < 6) { loginError.textContent = 'Password must be at least 6 characters.'; return; }
         try {
-            const cred = await auth.createUserWithEmailAndPassword(email, password);
-            await db.collection('users').doc(cred.user.uid).set({ role: 'admin' });
-            showApp(cred.user);
+            const { data, error } = await supabase.auth.signUp({ email, password });
+            if (error) throw error;
+            alert('Account created! Please check your email to confirm.');
+            loginError.textContent = '';
         } catch (err) { loginError.textContent = err.message; }
     });
 
-    logoutBtn.addEventListener('click', function() { auth.signOut(); showLogin(); });
+    logoutBtn.addEventListener('click', async function() {
+        await supabase.auth.signOut();
+        showLogin();
+    });
+
     loginEmail.addEventListener('keydown', (e) => { if (e.key === 'Enter') loginBtn.click(); });
     loginPassword.addEventListener('keydown', (e) => { if (e.key === 'Enter') loginBtn.click(); });
 
@@ -769,9 +752,12 @@
     if (dateInput) dateInput.value = today;
 
     // ─── AUTH STATE LISTENER ───
-    auth.onAuthStateChanged(user => {
-        if (user) showApp(user);
-        else showLogin();
+    supabase.auth.onAuthStateChange((event, session) => {
+        if (session) {
+            showApp(session.user);
+        } else {
+            showLogin();
+        }
     });
 </script>
 </body>
