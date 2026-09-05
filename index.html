@@ -64,7 +64,6 @@
             color: #f59e0b;
             font-weight: 600;
         }
-        /* ─── Structured Form ─── */
         .form-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -90,14 +89,8 @@
             letter-spacing: 0.04em;
             margin-bottom: 2px;
         }
-        .form-group label .required {
-            color: #f87171;
-            font-weight: 700;
-        }
-        .form-group label .optional {
-            color: #6b7b95;
-            font-weight: 400;
-        }
+        .form-group label .required { color: #f87171; font-weight: 700; }
+        .form-group label .optional { color: #6b7b95; font-weight: 400; }
         .form-group .file-input-wrapper {
             display: flex;
             align-items: center;
@@ -343,8 +336,6 @@
         }
         #loginScreen .login-box .btn-row .btn { flex: 1; min-width: 100px; }
         #loginScreen .login-box .error-msg { color: #f87171; font-size: 14px; margin-top: 8px; }
-
-        /* ─── BRANDING ─── */
         .branding {
             text-align: center;
             margin-top: 18px;
@@ -354,7 +345,6 @@
             border-top: 1px solid #2d3748;
             padding-top: 14px;
         }
-
         .app-content { display: none; }
         .tx-type-badge {
             display: inline-block;
@@ -387,15 +377,14 @@
     <!-- LOGIN SCREEN -->
     <div id="loginScreen" style="display:flex;">
         <div class="login-box">
-            <h2>🔐 Sign In</h2>
-            <p>Enter your credentials to access the Business Ledger</p>
+            <h2>🔐 Admin Sign In</h2>
+            <p>Enter your credentials to access the Business P&L Ledger</p>
             <input type="email" id="loginEmail" placeholder="Email" />
             <input type="password" id="loginPassword" placeholder="Password" />
             <div class="btn-row">
                 <button id="loginBtn" class="btn btn-login">Sign In</button>
             </div>
             <div id="loginError" class="error-msg"></div>
-            <!-- BRANDING -->
             <div class="branding">Developed by AW IT Solutions</div>
         </div>
     </div>
@@ -404,14 +393,14 @@
     <div id="appContent" class="app-content">
         <div class="header">
             <span class="header-icon">📊</span>
-            <h1>Business Ledger</h1>
+            <h1>Business P&L Ledger</h1>
             <span style="margin-left:auto; font-size:13px; color:#9aa5b5;">
                 👤 <span id="userEmailDisplay"></span>
                 <button id="logoutBtn" class="btn btn-outline" style="margin-left:12px; padding:4px 12px; font-size:12px;">Logout</button>
             </span>
         </div>
         <div class="subtitle">
-            <span><span style="color:#f59e0b;">⚡</span> Sale / Purchase / Expense with proof attachments (AW IT)</span>
+            <span><span style="color:#f59e0b;">⚡</span> Sale / Purchase / Expense tracker with proof attachments</span>
             <span class="badge">🔒 Admin</span>
         </div>
         <div id="statusMsg" class="status">⏳ Loading…</div>
@@ -428,7 +417,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Category<span class="required">(Required)</span></label>
+                    <label>Category <span class="required">(Required)</span></label>
                     <input type="text" id="categoryInput" placeholder="e.g. Rent, Sales" />
                 </div>
                 <div class="form-group">
@@ -461,6 +450,7 @@
 
             <div class="action-row">
                 <button id="exportCsvBtn" class="btn btn-export">📥 Export CSV</button>
+                <button id="editBalanceBtn" class="btn btn-outline" style="border-color: #f59e0b; color: #fcd34d;">💰 Edit Balance</button>
                 <button id="clearAllBtn" class="btn btn-danger">🗑 Clear All Data</button>
                 <button id="refreshBtn" class="btn btn-outline">⟳ Refresh</button>
             </div>
@@ -481,22 +471,28 @@
             <button id="clearFilterBtn" class="btn btn-outline btn-sm">Clear</button>
         </div>
 
-        <!-- TRANSACTIONS TABLE -->
+        <!-- TRANSACTIONS TABLE (now includes Balance column) -->
         <div class="table-wrap">
             <table>
                 <thead><tr>
-                    <th>#</th><th>Date</th><th>Type</th><th>Category</th><th>Amount</th><th>Party</th><th>Description</th><th>Proof</th><th></th>
+                    <th>#</th><th>Date</th><th>Type</th><th>Category</th><th>Amount</th><th>Party</th><th>Description</th><th>Proof</th>
+                    <th>Balance</th>
+                    <th></th>
                 </tr></thead>
-                <tbody id="transTableBody"><tr><td colspan="9" style="text-align:center;color:#6b7b95;">Loading…</td></tr></tbody>
+                <tbody id="transTableBody"><tr><td colspan="10" style="text-align:center;color:#6b7b95;">Loading…</td></tr></tbody>
             </table>
         </div>
 
-        <!-- SUMMARY -->
+        <!-- SUMMARY (new card: Current Bank Balance) -->
         <div class="summary-grid">
             <div class="summary-card"><div class="label">Total Sale</div><div class="value" id="totalSale">0</div></div>
             <div class="summary-card"><div class="label">Total Purchase</div><div class="value" id="totalPurchase">0</div></div>
             <div class="summary-card"><div class="label">Total Expense</div><div class="value" id="totalExpense">0</div></div>
             <div class="summary-card"><div class="label">Net Profit</div><div class="value" id="netBalance">0</div></div>
+            <div class="summary-card" style="border-color: #f59e0b;">
+                <div class="label">Current Bank Balance</div>
+                <div class="value" id="currentBankBalance">0</div>
+            </div>
         </div>
 
         <!-- CATEGORY BREAKDOWN -->
@@ -513,7 +509,7 @@
 </div>
 
 <script>
-    // ─── REPLACE WITH YOUR SUPABASE CREDENTIALS ───
+    // ─── YOUR SUPABASE CREDENTIALS ───
     const SUPABASE_URL = 'https://oddemhgvcbzjxkppgrxt.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kZGVtaGd2Y2J6anhrcHBncnh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MjU0NDAsImV4cCI6MjEwNDEwMTQ0MH0.TRU3Rjjggtl8-xlZshfLRx8tScFnKyldpI9Ixl1c5ms';
 
@@ -547,15 +543,18 @@
     const clearAllBtn = document.getElementById('clearAllBtn');
     const refreshBtn = document.getElementById('refreshBtn');
     const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const editBalanceBtn = document.getElementById('editBalanceBtn');
 
     const tbody = document.getElementById('transTableBody');
     const totalSaleEl = document.getElementById('totalSale');
     const totalPurchaseEl = document.getElementById('totalPurchase');
     const totalExpenseEl = document.getElementById('totalExpense');
     const netBalanceEl = document.getElementById('netBalance');
+    const currentBankBalanceEl = document.getElementById('currentBankBalance');
     const categoryBreakdownBody = document.getElementById('categoryBreakdownBody');
 
     let transactions = [];
+    let startingBalance = 0;
 
     function setStatus(msg, type = '') {
         statusEl.innerHTML = msg;
@@ -579,19 +578,73 @@
         loginScreen.style.display = 'none';
         appContent.style.display = 'block';
         userEmailDisplay.textContent = user.email || 'Admin';
+        loadStartingBalance();
         loadTransactions();
     }
 
-    // ─── LOAD ───
+    // ─── STARTING BALANCE ───
+    async function loadStartingBalance() {
+        try {
+            const { data, error } = await sb
+                .from('settings')
+                .select('starting_balance')
+                .maybeSingle();
+            if (error && error.code !== 'PGRST116') throw error;
+            if (data) {
+                startingBalance = data.starting_balance || 0;
+            } else {
+                // No settings row – ask user to set starting balance
+                const bal = prompt('Enter your current bank balance (e.g., 100000):', '0');
+                const val = parseFloat(bal);
+                if (!isNaN(val) && val >= 0) {
+                    const { error: insErr } = await sb
+                        .from('settings')
+                        .insert({ starting_balance: val });
+                    if (insErr) throw insErr;
+                    startingBalance = val;
+                } else {
+                    // Default to 0
+                    await sb.from('settings').insert({ starting_balance: 0 });
+                    startingBalance = 0;
+                }
+            }
+            render(); // re-render with balance
+        } catch (err) {
+            alert('Error loading balance: ' + err.message);
+        }
+    }
+
+    async function updateStartingBalance(newBalance) {
+        if (isNaN(newBalance) || newBalance < 0) { alert('Enter a valid non-negative number.'); return; }
+        try {
+            const { error } = await sb
+                .from('settings')
+                .update({ starting_balance: newBalance })
+                .eq('user_id', (await sb.auth.getUser()).data.user.id);
+            if (error) throw error;
+            startingBalance = newBalance;
+            // Recalculate running balances for all transactions (optional – we can just reload)
+            await loadTransactions();
+            render();
+            alert('Balance updated. Transactions will now reflect the new starting point.');
+        } catch (err) {
+            alert('Error updating balance: ' + err.message);
+        }
+    }
+
+    // ─── LOAD TRANSACTIONS ───
     async function loadTransactions() {
         setStatus('⏳ Loading…');
         try {
             const { data, error } = await sb
                 .from('transactions')
                 .select('*')
-                .order('date', { ascending: false });
+                .order('date', { ascending: false })
+                .order('id', { ascending: false });
             if (error) throw error;
             transactions = data || [];
+            // For proper running balance display, we need them in chronological order for the table
+            // But we already have running_balance stored; we can just display it.
             render();
             setStatus(`✅ ${transactions.length} records loaded`, 'success');
         } catch (err) {
@@ -602,9 +655,8 @@
 
     // ─── RENDER ───
     function render() {
+        // Filters (same as before)
         let filtered = transactions;
-
-        // Search filter
         const search = filterText.value.toLowerCase().trim();
         if (search) {
             filtered = filtered.filter(t =>
@@ -614,14 +666,10 @@
                 (t.type || '').toLowerCase().includes(search)
             );
         }
-
-        // Type filter
         const typeFilter = filterType.value;
         if (typeFilter !== 'all') {
             filtered = filtered.filter(t => t.type === typeFilter);
         }
-
-        // Date range filter
         const fromDate = filterDateFrom.value;
         const toDate = filterDateTo.value;
         if (fromDate && toDate) {
@@ -634,7 +682,7 @@
 
         // ─── Table ───
         if (filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#6b7b95;">No transactions</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#6b7b95;">No transactions</td></tr>';
         } else {
             let html = '';
             filtered.forEach((t, idx) => {
@@ -647,6 +695,9 @@
                 const attachHtml = t.attachment_url ?
                     `<a href="${t.attachment_url}" target="_blank" class="attach-link">📎 View</a>` :
                     '-';
+                // Balance column – show running_balance
+                const bal = t.running_balance !== undefined && t.running_balance !== null ? t.running_balance : 0;
+                const balClass = bal >= 0 ? 'green' : 'red';
                 html += `
                     <tr>
                         <td>${idx+1}</td>
@@ -657,6 +708,7 @@
                         <td>${t.party || '-'}</td>
                         <td>${t.description || '-'}</td>
                         <td>${attachHtml}</td>
+                        <td class="${balClass}">${formatCurrency(bal)}</td>
                         <td><button class="remove-btn" data-id="${t.id}">✕</button></td>
                     </tr>
                 `;
@@ -677,6 +729,8 @@
                             .delete()
                             .eq('id', id);
                         if (error) throw error;
+                        // After deletion, we need to recompute running balances for remaining transactions.
+                        await recalcRunningBalances();
                         await loadTransactions();
                     } catch (err) {
                         alert('Delete error: ' + err.message);
@@ -687,23 +741,28 @@
 
         // ─── Summary ───
         let totalSale = 0, totalPurchase = 0, totalExpense = 0;
-        filtered.forEach(t => {
+        // Use all transactions for summary, not filtered (or we can sum all)
+        transactions.forEach(t => {
             const amt = t.amount || 0;
             if (t.type === 'Sale') totalSale += amt;
             else if (t.type === 'Purchase') totalPurchase += amt;
             else if (t.type === 'Expense') totalExpense += amt;
         });
         const netProfit = totalSale - totalPurchase - totalExpense;
-
         totalSaleEl.textContent = formatCurrency(totalSale);
         totalPurchaseEl.textContent = formatCurrency(totalPurchase);
         totalExpenseEl.textContent = formatCurrency(totalExpense);
         netBalanceEl.textContent = formatCurrency(netProfit);
         netBalanceEl.className = 'value' + (netProfit >= 0 ? ' green' : ' red');
 
+        // Current Bank Balance
+        let currentBalance = startingBalance + totalSale - totalPurchase - totalExpense;
+        currentBankBalanceEl.textContent = formatCurrency(currentBalance);
+        currentBankBalanceEl.className = 'value' + (currentBalance >= 0 ? ' green' : ' red');
+
         // ─── Category Breakdown ───
         const catMap = {};
-        filtered.forEach(t => {
+        transactions.forEach(t => {
             const key = t.category || 'Uncategorized';
             if (!catMap[key]) catMap[key] = { amount: 0, type: t.type || 'Other' };
             catMap[key].amount += t.amount || 0;
@@ -717,6 +776,28 @@
         }
         if (!catHtml) catHtml = '<tr><td colspan="3" style="text-align:center;color:#6b7b95;">No data</td></tr>';
         categoryBreakdownBody.innerHTML = catHtml;
+    }
+
+    // ─── Recalculate Running Balances (after delete or edit) ───
+    async function recalcRunningBalances() {
+        // Fetch all transactions in chronological order
+        const { data, error } = await sb
+            .from('transactions')
+            .select('*')
+            .order('date', { ascending: true })
+            .order('id', { ascending: true });
+        if (error) throw error;
+        let balance = startingBalance;
+        for (const tx of data) {
+            if (tx.type === 'Sale') balance += tx.amount;
+            else if (tx.type === 'Purchase') balance -= tx.amount;
+            else if (tx.type === 'Expense') balance -= tx.amount;
+            // Update the running_balance in the DB
+            await sb
+                .from('transactions')
+                .update({ running_balance: balance })
+                .eq('id', tx.id);
+        }
     }
 
     // ─── ADD TRANSACTION ───
@@ -748,15 +829,32 @@
                 attachment_url = urlData.publicUrl;
             }
 
-            const { error } = await sb.from('transactions').insert([{
+            // Calculate the running balance for this new transaction
+            // Fetch the last transaction's running balance (or starting balance)
+            const { data: lastTx } = await sb
+                .from('transactions')
+                .select('running_balance')
+                .order('date', { ascending: false })
+                .order('id', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+            let lastBalance = lastTx ? lastTx.running_balance : startingBalance;
+            let newBalance = lastBalance;
+            if (type === 'Sale') newBalance += amount;
+            else newBalance -= amount; // Purchase or Expense
+
+            const newRecord = {
                 type,
                 category,
                 amount,
                 date: date || new Date().toISOString().slice(0,10),
                 party: party || '',
                 description: description || '',
-                attachment_url
-            }]);
+                attachment_url,
+                running_balance: newBalance
+            };
+
+            const { error } = await sb.from('transactions').insert([newRecord]);
 
             if (error) throw error;
             categoryInput.value = ''; amountInput.value = ''; dateInput.value = ''; partyInput.value = ''; descriptionInput.value = ''; fileInput.value = '';
@@ -766,6 +864,23 @@
             alert('Add error: ' + err.message);
         }
     }
+
+    // ─── EDIT BALANCE ───
+    editBalanceBtn.addEventListener('click', async function() {
+        const current = startingBalance;
+        const newVal = prompt(`Current starting balance: ${formatCurrency(current)}\nEnter new starting balance:`, current);
+        if (newVal !== null) {
+            const val = parseFloat(newVal);
+            if (!isNaN(val) && val >= 0) {
+                await updateStartingBalance(val);
+                // Also recalc all running balances
+                await recalcRunningBalances();
+                await loadTransactions();
+            } else {
+                alert('Please enter a valid non-negative number.');
+            }
+        }
+    });
 
     // ─── EXPORT CSV ───
     function exportCSV(data, filename, headers) {
@@ -780,7 +895,7 @@
 
     function handleExportCSV() {
         if (transactions.length === 0) { alert('No data to export.'); return; }
-        const headers = ['Date', 'Type', 'Category', 'Amount', 'Party', 'Description', 'Attachment URL'];
+        const headers = ['Date', 'Type', 'Category', 'Amount', 'Party', 'Description', 'Attachment URL', 'Running Balance'];
         const data = transactions.map(t => ({
             Date: t.date || '',
             Type: t.type || '',
@@ -788,7 +903,8 @@
             Amount: t.amount || 0,
             Party: t.party || '',
             Description: t.description || '',
-            'Attachment URL': t.attachment_url || ''
+            'Attachment URL': t.attachment_url || '',
+            'Running Balance': t.running_balance || 0
         }));
         exportCSV(data, 'business_pnl_ledger.csv', headers);
         setStatus('📥 Exported', 'success');
@@ -808,6 +924,7 @@
                 .delete()
                 .neq('id', 0);
             if (error) throw error;
+            // Reset starting balance to 0? We'll keep it.
             await loadTransactions();
             setStatus('🗑 All cleared', '');
         } catch (err) {
@@ -865,7 +982,10 @@
     });
 
     clearAllBtn.addEventListener('click', handleClearAll);
-    refreshBtn.addEventListener('click', loadTransactions);
+    refreshBtn.addEventListener('click', function() {
+        loadStartingBalance();
+        loadTransactions();
+    });
     exportCsvBtn.addEventListener('click', handleExportCSV);
 
     // Set default date
