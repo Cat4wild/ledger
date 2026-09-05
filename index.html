@@ -64,7 +64,80 @@
             color: #f59e0b;
             font-weight: 600;
         }
-        .form-grid, .filter-bar {
+        /* ─── Structured Form ─── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            background: #1f242b;
+            padding: 18px 20px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            border: 1px solid #3a4452;
+            align-items: end;
+            box-shadow: inset 0 1px 0 #313b47;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #9aa5b5;
+            letter-spacing: 0.04em;
+            margin-bottom: 2px;
+        }
+        .form-group label .required {
+            color: #f87171;
+            font-weight: 700;
+        }
+        .form-group label .optional {
+            color: #6b7b95;
+            font-weight: 400;
+        }
+        .form-group .file-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #13171c;
+            border: 1px solid #3a4452;
+            border-radius: 6px;
+            padding: 4px 10px;
+            height: 38px;
+        }
+        .form-group .file-input-wrapper input[type="file"] {
+            border: none;
+            padding: 4px 0;
+            background: transparent;
+            color: #9aa5b5;
+            font-size: 12px;
+            width: 100%;
+        }
+        .form-grid select, .form-grid input, .form-grid textarea {
+            background: #13171c;
+            border: 1px solid #3a4452;
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #e8edf2;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+            width: 100%;
+        }
+        .form-grid select:focus, .form-grid input:focus, .form-grid textarea:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+        }
+        .form-grid textarea {
+            resize: vertical;
+            height: 38px;
+            min-height: 38px;
+        }
+        .filter-bar {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
@@ -76,7 +149,6 @@
             align-items: center;
             box-shadow: inset 0 1px 0 #313b47;
         }
-        .form-grid select, .form-grid input, .form-grid textarea,
         .filter-bar select, .filter-bar input {
             background: #13171c;
             border: 1px solid #3a4452;
@@ -89,32 +161,9 @@
             font-family: inherit;
             min-width: 100px;
         }
-        .form-grid select:focus, .form-grid input:focus, .form-grid textarea:focus,
         .filter-bar select:focus, .filter-bar input:focus {
             border-color: #f59e0b;
             box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
-        }
-        .form-grid textarea {
-            min-width: 200px;
-            resize: vertical;
-            height: 38px;
-        }
-        .form-grid .file-input-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: #13171c;
-            border: 1px solid #3a4452;
-            border-radius: 6px;
-            padding: 4px 10px;
-        }
-        .form-grid .file-input-wrapper input[type="file"] {
-            border: none;
-            padding: 4px 0;
-            background: transparent;
-            color: #9aa5b5;
-            font-size: 12px;
-            max-width: 120px;
         }
         .btn {
             background: #4a525f;
@@ -129,6 +178,10 @@
             text-transform: uppercase;
             border-bottom: 2px solid transparent;
             letter-spacing: 0.03em;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
         .btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
         .btn:active { transform: translateY(0); }
@@ -142,7 +195,7 @@
         .btn-outline:hover { background: #2d3748; }
         .btn-login { background: #f59e0b; color: #0f1217; border-bottom-color: #b45309; font-weight: 700; }
         .btn-login:hover { background: #d97706; }
-        .btn-sm { padding: 4px 12px; font-size: 12px; }
+        .btn-sm { padding: 4px 12px; height: 32px; font-size: 12px; }
         .table-wrap {
             overflow-x: auto;
             margin-bottom: 16px;
@@ -290,6 +343,18 @@
         }
         #loginScreen .login-box .btn-row .btn { flex: 1; min-width: 100px; }
         #loginScreen .login-box .error-msg { color: #f87171; font-size: 14px; margin-top: 8px; }
+
+        /* ─── BRANDING ─── */
+        .branding {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 12px;
+            color: #6b7b95;
+            letter-spacing: 0.04em;
+            border-top: 1px solid #2d3748;
+            padding-top: 14px;
+        }
+
         .app-content { display: none; }
         .tx-type-badge {
             display: inline-block;
@@ -303,11 +368,10 @@
         .tx-type-badge.purchase { background: #7f1d1d; color: #fca5a5; }
         .tx-type-badge.expense { background: #78350f; color: #fcd34d; }
         @media (max-width:600px) {
-            .form-grid, .filter-bar, .action-row { flex-direction: column; align-items: stretch; }
+            .form-grid { grid-template-columns: 1fr; }
+            .filter-bar, .action-row { flex-direction: column; align-items: stretch; }
             .summary-grid { grid-template-columns: 1fr 1fr; }
             #loginScreen .login-box { padding: 24px 18px; }
-            .form-grid textarea { min-width: auto; }
-            .filter-bar input[type="date"] { min-width: 120px; }
         }
         @media (max-width:400px) {
             .summary-grid { grid-template-columns: 1fr; }
@@ -323,14 +387,16 @@
     <!-- LOGIN SCREEN -->
     <div id="loginScreen" style="display:flex;">
         <div class="login-box">
-            <h2>🔐 Sign In to AW APP</h2>
-            <p>Enter Email & Password to get Ledger</p>
+            <h2>🔐 Sign In</h2>
+            <p>Enter your credentials to access the Business Ledger</p>
             <input type="email" id="loginEmail" placeholder="Email" />
             <input type="password" id="loginPassword" placeholder="Password" />
             <div class="btn-row">
                 <button id="loginBtn" class="btn btn-login">Sign In</button>
             </div>
             <div id="loginError" class="error-msg"></div>
+            <!-- BRANDING -->
+            <div class="branding">Developed by AW IT Solutions</div>
         </div>
     </div>
 
@@ -353,21 +419,44 @@
         <!-- ADD TRANSACTION -->
         <div id="adminControls" style="display:block;">
             <div class="form-grid">
-                <select id="txTypeSelect">
-                    <option value="Sale">💰 Sale</option>
-                    <option value="Purchase">🛒 Purchase</option>
-                    <option value="Expense">💳 Expense</option>
-                </select>
-                <input type="text" id="categoryInput" placeholder="Category" />
-                <input type="number" id="amountInput" step="0.01" placeholder="Amount" />
-                <input type="date" id="dateInput" />
-                <input type="text" id="partyInput" placeholder="Party" />
-                <textarea id="descriptionInput" placeholder="Description" rows="1"></textarea>
-                <div class="file-input-wrapper">
-                    <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" />
-                    <span style="color:#6b7b95;font-size:11px;">📎 Proof</span>
+                <div class="form-group">
+                    <label>Type <span class="required">(Required)</span></label>
+                    <select id="txTypeSelect">
+                        <option value="Sale">💰 Sale</option>
+                        <option value="Purchase">🛒 Purchase</option>
+                        <option value="Expense">💳 Expense</option>
+                    </select>
                 </div>
-                <button id="addBtn" class="btn btn-success">➕ Add</button>
+                <div class="form-group">
+                    <label>Product<span class="required">(Required)</span></label>
+                    <input type="text" id="categoryInput" placeholder="e.g. Rent, Sales" />
+                </div>
+                <div class="form-group">
+                    <label>Amount <span class="required">(Required)</span></label>
+                    <input type="number" id="amountInput" step="0.01" placeholder="0.00" />
+                </div>
+                <div class="form-group">
+                    <label>Date <span class="required">(Required)</span></label>
+                    <input type="date" id="dateInput" />
+                </div>
+                <div class="form-group">
+                    <label>Party <span class="optional">(Optional)</span></label>
+                    <input type="text" id="partyInput" placeholder="Supplier / Customer" />
+                </div>
+                <div class="form-group">
+                    <label>Description <span class="optional">(Optional)</span></label>
+                    <textarea id="descriptionInput" placeholder="Add notes..." rows="1"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Proof <span class="optional">(Optional)</span></label>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" />
+                        <span style="color:#6b7b95;font-size:11px;">📎 Upload</span>
+                    </div>
+                </div>
+                <div class="form-group" style="display: flex; align-items: flex-end; justify-content: flex-end;">
+                    <button id="addBtn" class="btn btn-success" style="width:100%;">➕ Add</button>
+                </div>
             </div>
 
             <div class="action-row">
@@ -379,7 +468,7 @@
 
         <!-- FILTER BAR -->
         <div class="filter-bar">
-            <label>🔎 Filter:</label>
+            <label style="color:#9aa5b5; font-weight:600; font-size:13px;">🔎 Filter:</label>
             <input type="text" id="filterText" placeholder="Search..." style="flex:1;min-width:120px;" />
             <input type="date" id="filterDateFrom" placeholder="From" />
             <input type="date" id="filterDateTo" placeholder="To" />
@@ -396,7 +485,7 @@
         <div class="table-wrap">
             <table>
                 <thead><tr>
-                    <th>#</th><th>Date</th><th>Type</th><th>Category</th><th>Amount</th><th>Party</th><th>Description</th><th>Proof</th><th></th>
+                    <th>#</th><th>Date</th><th>Type</th><th>Product</th><th>Amount</th><th>Party</th><th>Description</th><th>Proof</th><th></th>
                 </tr></thead>
                 <tbody id="transTableBody"><tr><td colspan="9" style="text-align:center;color:#6b7b95;">Loading…</td></tr></tbody>
             </table>
@@ -640,8 +729,9 @@
         const description = descriptionInput.value.trim();
         const file = fileInput.files[0];
 
-        if (!category) { alert('Enter a category.'); return; }
-        if (isNaN(amount) || amount <= 0) { alert('Enter a valid amount.'); return; }
+        if (!category) { alert('Category is required.'); return; }
+        if (isNaN(amount) || amount <= 0) { alert('Enter a valid positive amount.'); return; }
+        if (!date) { alert('Date is required.'); return; }
 
         try {
             let attachment_url = null;
