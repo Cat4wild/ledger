@@ -299,8 +299,9 @@
             font-weight: 700;
             text-transform: uppercase;
         }
-        .tx-type-badge.expense { background: #7f1d1d; color: #fca5a5; }
-        .tx-type-badge.income { background: #065f46; color: #6ee7b7; }
+        .tx-type-badge.sale { background: #065f46; color: #6ee7b7; }
+        .tx-type-badge.purchase { background: #7f1d1d; color: #fca5a5; }
+        .tx-type-badge.expense { background: #78350f; color: #fcd34d; }
         @media (max-width:600px) {
             .form-grid, .filter-bar, .action-row { flex-direction: column; align-items: stretch; }
             .summary-grid { grid-template-columns: 1fr 1fr; }
@@ -322,8 +323,8 @@
     <!-- LOGIN SCREEN -->
     <div id="loginScreen" style="display:flex;">
         <div class="login-box">
-            <h2>🔐 Admin Sign In</h2>
-            <p>Enter your credentials to access the Business P&L Ledger</p>
+            <h2>🔐 Sign In to AW APP</h2>
+            <p>Enter Email & Password to get Ledger</p>
             <input type="email" id="loginEmail" placeholder="Email" />
             <input type="password" id="loginPassword" placeholder="Password" />
             <div class="btn-row">
@@ -337,14 +338,14 @@
     <div id="appContent" class="app-content">
         <div class="header">
             <span class="header-icon">📊</span>
-            <h1>Business P&L Ledger</h1>
+            <h1>Business Ledger</h1>
             <span style="margin-left:auto; font-size:13px; color:#9aa5b5;">
                 👤 <span id="userEmailDisplay"></span>
                 <button id="logoutBtn" class="btn btn-outline" style="margin-left:12px; padding:4px 12px; font-size:12px;">Logout</button>
             </span>
         </div>
         <div class="subtitle">
-            <span><span style="color:#f59e0b;">⚡</span> Income & Expense tracking with proof attachments</span>
+            <span><span style="color:#f59e0b;">⚡</span> Sale / Purchase / Expense tracker with proof attachments</span>
             <span class="badge">🔒 Admin</span>
         </div>
         <div id="statusMsg" class="status">⏳ Loading…</div>
@@ -353,7 +354,8 @@
         <div id="adminControls" style="display:block;">
             <div class="form-grid">
                 <select id="txTypeSelect">
-                    <option value="Income">💰 Income</option>
+                    <option value="Sale">💰 Sale</option>
+                    <option value="Purchase">🛒 Purchase</option>
                     <option value="Expense">💳 Expense</option>
                 </select>
                 <input type="text" id="categoryInput" placeholder="Category" />
@@ -375,7 +377,7 @@
             </div>
         </div>
 
-        <!-- FILTER BAR – date inputs are definitely here -->
+        <!-- FILTER BAR -->
         <div class="filter-bar">
             <label>🔎 Filter:</label>
             <input type="text" id="filterText" placeholder="Search..." style="flex:1;min-width:120px;" />
@@ -383,7 +385,8 @@
             <input type="date" id="filterDateTo" placeholder="To" />
             <select id="filterType">
                 <option value="all">All Types</option>
-                <option value="Income">Income</option>
+                <option value="Sale">Sale</option>
+                <option value="Purchase">Purchase</option>
                 <option value="Expense">Expense</option>
             </select>
             <button id="clearFilterBtn" class="btn btn-outline btn-sm">Clear</button>
@@ -399,14 +402,15 @@
             </table>
         </div>
 
-        <!-- SUMMARY (updates with filters) -->
+        <!-- SUMMARY -->
         <div class="summary-grid">
-            <div class="summary-card"><div class="label">Total Income</div><div class="value" id="totalIncome">0</div></div>
-            <div class="summary-card"><div class="label">Total Expenses</div><div class="value" id="totalExpenses">0</div></div>
+            <div class="summary-card"><div class="label">Total Sale</div><div class="value" id="totalSale">0</div></div>
+            <div class="summary-card"><div class="label">Total Purchase</div><div class="value" id="totalPurchase">0</div></div>
+            <div class="summary-card"><div class="label">Total Expense</div><div class="value" id="totalExpense">0</div></div>
             <div class="summary-card"><div class="label">Net Profit</div><div class="value" id="netBalance">0</div></div>
         </div>
 
-        <!-- CATEGORY BREAKDOWN (updates with filters) -->
+        <!-- CATEGORY BREAKDOWN -->
         <div style="margin-top:16px;">
             <div class="section-title">📊 Category Breakdown</div>
             <div class="table-wrap">
@@ -456,8 +460,9 @@
     const exportCsvBtn = document.getElementById('exportCsvBtn');
 
     const tbody = document.getElementById('transTableBody');
-    const totalIncomeEl = document.getElementById('totalIncome');
-    const totalExpensesEl = document.getElementById('totalExpenses');
+    const totalSaleEl = document.getElementById('totalSale');
+    const totalPurchaseEl = document.getElementById('totalPurchase');
+    const totalExpenseEl = document.getElementById('totalExpense');
     const netBalanceEl = document.getElementById('netBalance');
     const categoryBreakdownBody = document.getElementById('categoryBreakdownBody');
 
@@ -506,12 +511,11 @@
         }
     }
 
-    // ─── RENDER (with date filters) ───
+    // ─── RENDER ───
     function render() {
-        // 1. Start with all transactions
         let filtered = transactions;
 
-        // 2. Apply search filter
+        // Search filter
         const search = filterText.value.toLowerCase().trim();
         if (search) {
             filtered = filtered.filter(t =>
@@ -522,13 +526,13 @@
             );
         }
 
-        // 3. Apply type filter
+        // Type filter
         const typeFilter = filterType.value;
         if (typeFilter !== 'all') {
             filtered = filtered.filter(t => t.type === typeFilter);
         }
 
-        // 4. Apply date range filter (if both dates are set)
+        // Date range filter
         const fromDate = filterDateFrom.value;
         const toDate = filterDateTo.value;
         if (fromDate && toDate) {
@@ -539,7 +543,7 @@
             filtered = filtered.filter(t => t.date <= toDate);
         }
 
-        // ─── Render Table ───
+        // ─── Table ───
         if (filtered.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#6b7b95;">No transactions</td></tr>';
         } else {
@@ -548,8 +552,9 @@
                 const typeClass = (t.type || '').toLowerCase();
                 const typeBadge = `<span class="tx-type-badge ${typeClass}">${t.type || 'N/A'}</span>`;
                 const amount = t.amount || 0;
-                const amountClass = t.type === 'Expense' ? 'red' : 'green';
-                const sign = t.type === 'Expense' ? '-' : '+';
+                const isPositive = t.type === 'Sale';
+                const amountClass = isPositive ? 'green' : 'red';
+                const sign = isPositive ? '+' : '-';
                 const attachHtml = t.attachment_url ?
                     `<a href="${t.attachment_url}" target="_blank" class="attach-link">📎 View</a>` :
                     '-';
@@ -592,15 +597,18 @@
         }
 
         // ─── Summary ───
-        let totalIncome = 0, totalExpenses = 0;
+        let totalSale = 0, totalPurchase = 0, totalExpense = 0;
         filtered.forEach(t => {
             const amt = t.amount || 0;
-            if (t.type === 'Income') totalIncome += amt;
-            else if (t.type === 'Expense') totalExpenses += amt;
+            if (t.type === 'Sale') totalSale += amt;
+            else if (t.type === 'Purchase') totalPurchase += amt;
+            else if (t.type === 'Expense') totalExpense += amt;
         });
-        const netProfit = totalIncome - totalExpenses;
-        totalIncomeEl.textContent = formatCurrency(totalIncome);
-        totalExpensesEl.textContent = formatCurrency(totalExpenses);
+        const netProfit = totalSale - totalPurchase - totalExpense;
+
+        totalSaleEl.textContent = formatCurrency(totalSale);
+        totalPurchaseEl.textContent = formatCurrency(totalPurchase);
+        totalExpenseEl.textContent = formatCurrency(totalExpense);
         netBalanceEl.textContent = formatCurrency(netProfit);
         netBalanceEl.className = 'value' + (netProfit >= 0 ? ' green' : ' red');
 
@@ -614,7 +622,8 @@
         let catHtml = '';
         for (const cat in catMap) {
             const d = catMap[cat];
-            const amtClass = d.amount >= 0 ? (d.type === 'Expense' ? 'red' : 'green') : 'red';
+            const isPositive = d.type === 'Sale';
+            const amtClass = isPositive ? 'green' : 'red';
             catHtml += `<tr><td><strong>${cat}</strong></td><td class="${amtClass}">${formatCurrency(d.amount)}</td><td>${d.type}</td></tr>`;
         }
         if (!catHtml) catHtml = '<tr><td colspan="3" style="text-align:center;color:#6b7b95;">No data</td></tr>';
@@ -752,7 +761,6 @@
         });
     });
 
-    // Filter events – each triggers re‑render
     filterText.addEventListener('input', render);
     filterType.addEventListener('change', render);
     filterDateFrom.addEventListener('change', render);
@@ -770,7 +778,7 @@
     refreshBtn.addEventListener('click', loadTransactions);
     exportCsvBtn.addEventListener('click', handleExportCSV);
 
-    // Set default date for new transaction
+    // Set default date
     const today = new Date().toISOString().slice(0,10);
     if (dateInput) dateInput.value = today;
 
